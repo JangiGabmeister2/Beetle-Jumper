@@ -14,15 +14,17 @@ public class PlayerMovement : MonoBehaviour
     public bool canFly = false;
     public float maxFlightDuration = 5;
     public UnityEvent flyingEvent;
-    public UnityEvent landedEvent;
     float _jumpDuration;
     float _flightDuration;
 
     [Header("Movement Speeds")]
     [Tooltip("Input how fast the player can move.")]
     public float movementSpeed = 10f;
+    private float _originalSpeed;
     [Tooltip("Input how much the player can jump.")]
     public float jumpSpeed = 5f;
+    [HideInInspector]
+    public bool canJump = true;
     float gravity = 9.8f;
 
     [Header("Surface Alignment"), Tooltip("Input the ground layer.")]
@@ -38,6 +40,10 @@ public class PlayerMovement : MonoBehaviour
 
     private void Start()
     {
+        canJump = true;
+
+        _originalSpeed = movementSpeed;
+
         _flightDuration = maxFlightDuration;
         _menuManager = _menuManager.GetComponent<MenuManager>();
 
@@ -47,7 +53,6 @@ public class PlayerMovement : MonoBehaviour
         _rotationChange = new Vector3(0, 45, 0);
 
         flyingEvent.AddListener(FlyMovement);
-        landedEvent.AddListener(GroundedMovement);
     }
 
     private void Update()
@@ -90,7 +95,7 @@ public class PlayerMovement : MonoBehaviour
             MovePlayer();
 
             //if player presses jump button
-            if (Input.GetButton("Jump"))
+            if (canJump && Input.GetButton("Jump"))
             {
                 //sets the upward direction to the jump speed value
                 _movementDirection.y = jumpSpeed;
@@ -102,7 +107,7 @@ public class PlayerMovement : MonoBehaviour
             if (canFly)
             {
                 //if the player is pressing the jump button
-                if (Input.GetButton("Jump"))
+                if (canJump && Input.GetButton("Jump"))
                 {
                     //counts how long the jump has elapsed
                     _jumpDuration += Time.deltaTime;
@@ -151,11 +156,6 @@ public class PlayerMovement : MonoBehaviour
         {
             //forces the player down to the ground
             _movementDirection.y -= 10f;
-
-            if (IsGrounded())
-            {
-                landedEvent.Invoke();
-            }
         }
     }
     #endregion
@@ -173,6 +173,21 @@ public class PlayerMovement : MonoBehaviour
 
         //if not touching the ground, returns false
         return false;
+    }
+
+    public void MovementModifier(float speed)
+    {
+        movementSpeed = speed;
+    }
+
+    public void ResetMovementSpeed()
+    {
+        movementSpeed = _originalSpeed;
+    }
+
+    public void ResetJumpToTrue()
+    {
+        canJump = true;
     }
 
     public void SetChecpoint(Vector3 position)

@@ -5,94 +5,41 @@ using UnityEngine.UI;
 
 public class BeetleManager : MonoBehaviour
 {
-    PlayerMovement player;
+    #region References
+    [Header("References")]
     public MenuManager _menuManager;
+    PlayerMovement player;
 
+    [Header("Player Health")]
     public int maxHealth;
     public int currentHealth;
 
+    public GameObject heartsContainerUI;
     public Image[] hearts;
     public Sprite fullHeart;
     public Sprite emptyHeart;
 
-    public int beetleGauge;
-
-    public List<GameObject> totalCollectibles = new List<GameObject>();
+    [Header("Collectibles")]
     List<GameObject> collectibles = new List<GameObject>();
     public Text collectibleCounter;
 
+    public GameObject collectUI;
+    public Text totalCollectiblesText;  
+    public List<GameObject> totalCollectibles = new List<GameObject>();
+    private int counter = 0;
+
+    [Header("Distance To Goal")]
     public Text goalDistanceText;
     public GameObject goal;
 
+    [Header("Flight")]
     public GameObject flightImage;
     private float maxFlightDuration;
     private bool drain = false;
 
-    public Text totalCollectiblesText;
-    private int counter = 0;
-
-    public void MeasureDistance()
-    {
-        float distance = Vector3.Distance(goal.transform.position, transform.position);
-        goalDistanceText.text = (int)distance + " m";
-    }
-
-    public void ToggleFlightImage()
-    {
-        flightImage.SetActive(true);
-        drain = true;
-    }
-
-    private void OnTriggerEnter(Collider other)
-    {
-        if (other.gameObject.tag == "Enemy")
-        {
-            currentHealth -= 1;
-        }
-
-        if (other.gameObject.tag == "DeathZone")
-        {
-            currentHealth = 0;
-        }
-
-        if (other.gameObject.tag == "Checkpoint")
-        {
-            player.SetChecpoint(other.transform.position);
-        }
-
-        if (other.gameObject.tag == "Stuck")
-        {
-            player.ReturnToPosition();
-        }
-
-        if (other.gameObject.tag == "Collectible")
-        {
-            collectibles.Add(other.gameObject);
-        }
-    }
-
-    private void OnTriggerStay(Collider other)
-    {
-        if (other.gameObject.tag == "Stuck")
-        {
-            player.ReturnToPosition();
-        }
-    }
-
-    private void UpdateHealth()
-    {
-        for (int i = 0; i < hearts.Length; i++)
-        {
-            if (i < currentHealth)
-            {
-                hearts[i].sprite = fullHeart;
-            }
-            else
-            {
-                hearts[i].sprite = emptyHeart;
-            }
-        }
-    }
+    [Header("Player Status")]
+    public bool inWater;
+    #endregion
 
     public void Start()
     {
@@ -121,29 +68,117 @@ public class BeetleManager : MonoBehaviour
         }
     }
 
-    //when player is flying, flight image is enabled and 'drains' according to flight duration
-    private void UpdateFlightIcon()
+    #region OnTrigger
+    private void OnTriggerEnter(Collider other)
     {
-        if (flightImage.activeSelf)
+        if (other.gameObject.tag == "Enemy")
         {
-            Image flightIcon = flightImage.GetComponent<Image>();
-            if (flightIcon.fillAmount > 0 && drain)
-            {
-                flightIcon.fillAmount -= 1 / maxFlightDuration * Time.deltaTime;
-            }
-            
-            if (flightIcon.fillAmount <= 0)
-            {
-                drain = false;
-                flightImage.SetActive(false);
-            }
+            currentHealth -= 1;
+            StartCoroutine(nameof(ShowHideHealth));
         }
-        else
+
+        if (other.gameObject.tag == "DeathZone")
         {
-            flightImage.GetComponent<Image>().fillAmount = 1;
+            currentHealth = 0;
+        }
+
+        if (other.gameObject.tag == "Checkpoint")
+        {
+            player.SetChecpoint(other.transform.position);
+        }
+
+        if (other.gameObject.tag == "Stuck")
+        {
+            player.ReturnToPosition();
+        }
+
+        if (other.gameObject.tag == "Collectible")
+        {
+            collectibles.Add(other.gameObject);
+            StartCoroutine(nameof(ShowHideCollect));
         }
     }
 
+    private void OnTriggerStay(Collider other)
+    {
+        if (other.gameObject.tag == "Stuck")
+        {
+            player.ReturnToPosition();
+        }
+
+        if (other.gameObject.tag == "Water")
+        {
+            inWater = true;
+        }
+    }
+    #endregion
+
+    #region Health System
+    private void UpdateHealth()
+    {
+        for (int i = 0; i < hearts.Length; i++)
+        {
+            if (i < currentHealth)
+            {
+                hearts[i].sprite = fullHeart;
+            }
+            else
+            {
+                hearts[i].sprite = emptyHeart;
+            }
+        }
+    }
+
+    IEnumerator ShowHideHealth()
+    {
+        heartsContainerUI.SetActive(true);
+
+        yield return new WaitForSeconds(3f);
+
+        heartsContainerUI.SetActive(false);
+    }
+    #endregion
+
+    #region Flight System
+    public void ToggleFlightImage()
+    {
+        if (flightImage.GetComponent<Image>().fillAmount == 1)
+        {
+            drain = true;
+        }
+    }
+
+    //when player is flying, flight image is enabled and 'drains' according to flight duration
+    private void UpdateFlightIcon()
+    {
+        if (drain)
+        {
+            flightImage.SetActive(true);
+            Image flightIcon = flightImage.GetComponent<Image>();
+            if (flightIcon.fillAmount > 0)
+            {
+                flightIcon.fillAmount -= 1 / maxFlightDuration * Time.deltaTime;
+            }
+
+            if (flightIcon.fillAmount <= 0)
+            {
+                drain = false;
+            }
+        }
+
+        if (!drain)
+        {
+            float IconFill = flightImage.GetComponent<Image>().fillAmount;
+            flightImage.GetComponent<Image>().fillAmount += Time.deltaTime;
+            if (IconFill == 1)
+            {
+                flightImage.SetActive(false);
+            }
+        }
+    }
+    #endregion
+
+    #region Collectibles
     //whenever the player collects a collectible, updates the counter based on how many have been collected
     private void UpdateCollectibleCounter()
     {
@@ -155,4 +190,40 @@ public class BeetleManager : MonoBehaviour
     {
         totalCollectiblesText.text = $"You collected {counter} / {totalCollectibles.Count} Collectibles";
     }
+    IEnumerator ShowHideCollect()
+    {
+        collectUI.SetActive(true);
+
+        yield return new WaitForSeconds(3f);
+
+        collectUI.SetActive(false);
+    }
+    #endregion
+
+    #region Distance
+    public void MeasureDistance()
+    {
+        float distance = Vector3.Distance(goal.transform.position, transform.position);
+        goalDistanceText.text = $"Distance to Goal\n{(int)distance}cm";
+    }
+    #endregion
+
+    #region Player Status
+    private void UpdatePlayerStatus()
+    {
+        if (inWater)
+        {
+            player.canJump = false;
+        }
+        else
+        {
+            player.canJump = true;
+        }
+    }
+
+    public void OutOfWater()
+    {
+        inWater = false;
+    }
+    #endregion
 }

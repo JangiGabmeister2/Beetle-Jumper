@@ -11,6 +11,7 @@ TagManager:
   - Stuck
   - Collectible
   - CollectibleUI
+  - Water
   layers:
   - Default
   - TransparentFX

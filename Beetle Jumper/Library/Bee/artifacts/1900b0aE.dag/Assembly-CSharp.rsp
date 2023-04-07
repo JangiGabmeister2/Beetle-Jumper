@@ -350,7 +350,6 @@
 "Assets/CollectibleMovement.cs"
 "Assets/Scripts/BeetleManager.cs"
 "Assets/Scripts/ChangeLevel.cs"
-"Assets/Scripts/CollectibleLerp.cs"
 "Assets/Scripts/GameManager.cs"
 "Assets/Scripts/OnEnter.cs"
 "Assets/Scripts/Player Animation/AnimatePlayer.cs"

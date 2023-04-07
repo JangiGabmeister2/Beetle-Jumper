@@ -111,16 +111,9 @@ public class MenuManager : MonoBehaviour
     {
         if (Input.GetKeyDown(KeyCode.Escape))
         {
-            Debug.Log("Escape");
-            if (isPaused)
-            {
-                Resume();
-                Debug.Log("resumed)");
-            }
-            else
+            if (!isPaused)
             {
                 Pause();
-                Debug.Log("paused");
             }
         }
 
